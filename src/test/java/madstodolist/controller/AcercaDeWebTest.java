@@ -8,8 +8,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-
 @SpringBootTest
 @AutoConfigureMockMvc
 public class AcercaDeWebTest {
@@ -20,6 +20,15 @@ public class AcercaDeWebTest {
     @Test
     public void getAboutDevuelveNombreAplicacion() throws Exception {
         this.mockMvc.perform(get("/about"))
+                .andExpect(status().isOk())
                 .andExpect(content().string(containsString("ToDoList")));
+    }
+
+    @Test
+    public void getAboutSinLoginMuestraEnlacesLoginRegistro() throws Exception {
+        this.mockMvc.perform(get("/about"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Login")))
+                .andExpect(content().string(containsString("Registro")));
     }
 }
