@@ -4,17 +4,18 @@
 <head th:replace="fragments :: head (titulo='Acerca de')"></head>
 
 <body>
-<div class="container-fluid">
+    <div th:replace="fragments :: navbar(${usuario})"></div>
     <div class="container-fluid">
-        <h1>ToDoList</h1>
-        <ul>
-            <li>Desarrollada por Harryson Montesdeoca </li>
-            <li>Versión 1.0.1 </li>
-            <li>Fecha de release: 03/6/2025</li>
-        </ul>
-    </div>
+        <div class="container-fluid">
+            <h1>ToDoList</h1>
+            <ul>
+                <li>Desarrollada por Harryson Montesdeoca </li>
+                <li>Versión 1.1.0 (en desarrollo)</li>
+                <li>Fecha de release: pendiente de release</li>
+            </ul>
+        </div>
 
-</div>
+    </div>
 
 <div th:replace="fragments::javascript"/>
 
