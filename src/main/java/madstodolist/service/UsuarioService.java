@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import java.util.List;
 
 @Service
 public class UsuarioService {
@@ -71,5 +74,17 @@ public class UsuarioService {
         else {
             return modelMapper.map(usuario, UsuarioData.class);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioData> findAll() {
+    return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
+            .map(usuario -> {
+                UsuarioData data = new UsuarioData();
+                data.setId(usuario.getId());
+                data.setEmail(usuario.getEmail());
+                return data;
+            })
+            .collect(Collectors.toList());
     }
 }
