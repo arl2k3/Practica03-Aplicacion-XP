@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments :: head(titulo='Detalles de Usuario')"></head>
+<body>
+
+<div th:replace="fragments :: navbar(${usuario})"></div>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Detalles del Usuario</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>ID:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            <span th:text="${usuario.id}"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Email:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            <span th:text="${usuario.email}"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Nombre:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            <span th:text="${usuario.nombre}"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Fecha de Nacimiento:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            <span th:text="${#dates.format(usuario.fechaNacimiento, 'dd/MM/yyyy')}"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a th:href="@{/registrados}" class="btn btn-secondary">Volver al listado</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="fragments :: javascript"></div>
+
+</body>
+</html> 
