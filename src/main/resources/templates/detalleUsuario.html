@@ -18,7 +18,7 @@
                             <strong>ID:</strong>
                         </div>
                         <div class="col-md-8">
-                            <span th:text="${usuario.id}"></span>
+                            <span th:text="${usuarioDetalle.id}"></span>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -26,7 +26,7 @@
                             <strong>Email:</strong>
                         </div>
                         <div class="col-md-8">
-                            <span th:text="${usuario.email}"></span>
+                            <span th:text="${usuarioDetalle.email}"></span>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -34,7 +34,7 @@
                             <strong>Nombre:</strong>
                         </div>
                         <div class="col-md-8">
-                            <span th:text="${usuario.nombre}"></span>
+                            <span th:text="${usuarioDetalle.nombre}"></span>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -42,7 +42,7 @@
                             <strong>Fecha de Nacimiento:</strong>
                         </div>
                         <div class="col-md-8">
-                            <span th:text="${#dates.format(usuario.fechaNacimiento, 'dd/MM/yyyy')}"></span>
+                            <span th:text="${#dates.format(usuarioDetalle.fechaNacimiento, 'dd/MM/yyyy')}"></span>
                         </div>
                     </div>
                 </div>
