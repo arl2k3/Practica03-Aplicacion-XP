@@ -23,8 +23,8 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <!-- Enlaces Izquierda -->
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/usuarios/{id}/tareas(id=${usuario.id})}" href="#" th:if="${usuario != null}">Tareas</a>
+                <li class="nav-item" th:if="${usuario != null}">
+                    <a class="nav-link" th:href="@{/usuarios/{id}/tareas(id=${usuario.id})}">Tareas</a>
                 </li>
             </ul>
 
