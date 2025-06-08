@@ -12,12 +12,16 @@
             <tr>
                 <th>ID</th>
                 <th>Email</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             <tr th:each="usuario : ${usuarios}">
                 <td th:text="${usuario.id}">1</td>
                 <td th:text="${usuario.email}">email@example.com</td>
+                <td>
+                    <a th:href="@{/registrados/{id}(id=${usuario.id})}" class="btn btn-info btn-sm">Ver detalles</a>
+                </td>
             </tr>
         </tbody>
     </table>
