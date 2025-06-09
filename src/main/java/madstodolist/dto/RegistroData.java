@@ -1,9 +1,10 @@
 package madstodolist.dto;
 
-import org.springframework.format.annotation.DateTimeFormat;
+import java.util.Date;
 
 import javax.validation.constraints.Email;
-import java.util.Date;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 // Clase de datos para el formulario de registro
 public class RegistroData {
@@ -13,6 +14,7 @@ public class RegistroData {
     private String nombre;
     @DateTimeFormat(pattern = "dd-MM-yyyy")
     private Date fechaNacimiento;
+    private boolean esAdmin;
 
     public String getEmail() {
         return eMail;
@@ -44,5 +46,13 @@ public class RegistroData {
 
     public void setFechaNacimiento(Date fechaNacimiento) {
         this.fechaNacimiento = fechaNacimiento;
+    }
+
+    public boolean isEsAdmin() {
+        return esAdmin;
+    }
+
+    public void setEsAdmin(boolean esAdmin) {
+        this.esAdmin = esAdmin;
     }
 }
