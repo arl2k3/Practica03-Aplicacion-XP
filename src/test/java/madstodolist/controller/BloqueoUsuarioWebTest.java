@@ -5,10 +5,6 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -22,7 +18,7 @@ import madstodolist.service.UsuarioService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class DetalleUsuarioWebTest {
+public class BloqueoUsuarioWebTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -34,7 +30,36 @@ public class DetalleUsuarioWebTest {
     private ManagerUserSession managerUserSession;
 
     @Test
-    public void detalleUsuarioMuestraDatosCorrectos() throws Exception {
+    public void testListadoUsuariosMuestraEstadoBloqueo() throws Exception {
+        // GIVEN
+        // Un usuario administrador logueado
+        Long adminId = 1L;
+        UsuarioData admin = new UsuarioData();
+        admin.setId(adminId);
+        admin.setEmail("admin@example.com");
+        admin.setEsAdmin(true);
+
+        // Un usuario bloqueado
+        Long userId = 2L;
+        UsuarioData usuario = new UsuarioData();
+        usuario.setId(userId);
+        usuario.setEmail("user@example.com");
+        usuario.setEsAdmin(false);
+        usuario.setBloqueado(true);
+
+        when(managerUserSession.usuarioLogeado()).thenReturn(adminId);
+        when(usuarioService.findById(adminId)).thenReturn(admin);
+        when(usuarioService.findAll()).thenReturn(java.util.Arrays.asList(usuario));
+
+        // WHEN, THEN
+        // El listado muestra el estado de bloqueo
+        this.mockMvc.perform(get("/registrados"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Bloqueado")));
+    }
+
+    @Test
+    public void testBloquearUsuario() throws Exception {
         // GIVEN
         // Un usuario administrador logueado
         Long adminId = 1L;
@@ -48,7 +73,6 @@ public class DetalleUsuarioWebTest {
         UsuarioData usuario = new UsuarioData();
         usuario.setId(userId);
         usuario.setEmail("user@example.com");
-        usuario.setNombre("Usuario Normal");
         usuario.setEsAdmin(false);
         usuario.setBloqueado(false);
 
@@ -56,48 +80,54 @@ public class DetalleUsuarioWebTest {
         when(usuarioService.findById(adminId)).thenReturn(admin);
         when(usuarioService.findById(userId)).thenReturn(usuario);
 
-        // WHEN, THEN
-        // Se muestra la página de detalle del usuario
-        this.mockMvc.perform(get("/registrados/" + userId))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("user@example.com")))
-                .andExpect(content().string(containsString("Usuario Normal")))
-                .andExpect(content().string(containsString("No"))); // No es administrador
+        // WHEN
+        // El administrador bloquea al usuario
+        this.mockMvc.perform(post("/registrados/" + userId + "/bloquear"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/registrados"));
+
+        // THEN
+        // Se llama al servicio para cambiar el estado de bloqueo
+        verify(usuarioService).cambiarEstadoBloqueo(userId);
     }
 
     @Test
-    public void detalleUsuarioConLoginMuestraNavbarCorrecto() throws Exception {
+    public void testLoginUsuarioBloqueado() throws Exception {
         // GIVEN
-        // Un usuario administrador logueado
-        Long adminId = 1L;
-        UsuarioData admin = new UsuarioData();
-        admin.setId(adminId);
-        admin.setEmail("admin@example.com");
-        admin.setNombre("Admin");
-        admin.setEsAdmin(true);
+        // Un usuario bloqueado
+        UsuarioData usuario = new UsuarioData();
+        usuario.setEmail("user@example.com");
+        usuario.setPassword("12345678");
+        usuario.setBloqueado(true);
 
-        // Un usuario normal
-        Long userId = 2L;
+        when(usuarioService.login("user@example.com", "12345678"))
+                .thenReturn(UsuarioService.LoginStatus.USER_BLOCKED);
+
+        // WHEN, THEN
+        // El login muestra mensaje de cuenta bloqueada
+        this.mockMvc.perform(post("/login")
+                        .param("eMail", "user@example.com")
+                        .param("password", "12345678"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Tu cuenta ha sido bloqueada")));
+    }
+
+    @Test
+    public void testBloquearUsuarioNoAutorizado() throws Exception {
+        // GIVEN
+        // Un usuario no administrador logueado
+        Long userId = 1L;
         UsuarioData usuario = new UsuarioData();
         usuario.setId(userId);
         usuario.setEmail("user@example.com");
-        usuario.setNombre("Usuario Normal");
         usuario.setEsAdmin(false);
 
-        when(managerUserSession.usuarioLogeado()).thenReturn(adminId);
-        when(usuarioService.findById(adminId)).thenReturn(admin);
+        when(managerUserSession.usuarioLogeado()).thenReturn(userId);
         when(usuarioService.findById(userId)).thenReturn(usuario);
 
         // WHEN, THEN
-        // Se muestra la página de detalle con el navbar correcto
-        this.mockMvc.perform(get("/registrados/" + userId))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Admin")))
-                .andExpect(content().string(containsString("Cerrar sesión")));
-    }
-
-    private Date parseDate(String dateStr) throws ParseException {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        return sdf.parse(dateStr);
+        // El usuario intenta bloquear a otro usuario
+        this.mockMvc.perform(post("/registrados/2/bloquear"))
+                .andExpect(status().isUnauthorized());
     }
 } 

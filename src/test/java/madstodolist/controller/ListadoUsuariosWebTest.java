@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,66 +26,63 @@ public class ListadoUsuariosWebTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private ManagerUserSession managerUserSession;
+    private UsuarioService usuarioService;
 
     @MockBean
-    private UsuarioService usuarioService;
+    private ManagerUserSession managerUserSession;
 
     @Test
     public void listadoUsuariosMuestraTablaConUsuarios() throws Exception {
         // GIVEN
-        // Lista de usuarios en el sistema
-        UsuarioData usuario1 = new UsuarioData();
-        usuario1.setId(1L);
-        usuario1.setEmail("usuario1@example.com");
+        // Un usuario administrador logueado
+        Long adminId = 1L;
+        UsuarioData admin = new UsuarioData();
+        admin.setId(adminId);
+        admin.setEmail("admin@example.com");
+        admin.setEsAdmin(true);
 
-        UsuarioData usuario2 = new UsuarioData();
-        usuario2.setId(2L);
-        usuario2.setEmail("usuario2@example.com");
+        // Un usuario normal
+        UsuarioData usuario = new UsuarioData();
+        usuario.setId(2L);
+        usuario.setEmail("user@example.com");
+        usuario.setNombre("Usuario Normal");
+        usuario.setEsAdmin(false);
+        usuario.setBloqueado(false);
 
-        List<UsuarioData> usuarios = Arrays.asList(usuario1, usuario2);
-
-        when(usuarioService.findAll()).thenReturn(usuarios);
-        when(managerUserSession.usuarioLogeado()).thenReturn(null);
+        when(managerUserSession.usuarioLogeado()).thenReturn(adminId);
+        when(usuarioService.findById(adminId)).thenReturn(admin);
+        when(usuarioService.findAll()).thenReturn(Arrays.asList(admin, usuario));
 
         // WHEN, THEN
-        // Al acceder al listado de usuarios, se muestra una tabla con los usuarios
+        // Se muestra la tabla con los usuarios
         this.mockMvc.perform(get("/registrados"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(allOf(
-                        containsString("Listado de Usuarios"),
-                        containsString("usuario1@example.com"),
-                        containsString("usuario2@example.com")
-                )))
-                .andExpect(content().string(containsString("Ver detalles")));
+                .andExpect(content().string(containsString("admin@example.com")))
+                .andExpect(content().string(containsString("user@example.com")))
+                .andExpect(content().string(containsString("Sí"))) // Es administrador
+                .andExpect(content().string(containsString("No"))); // No es administrador
     }
 
     @Test
     public void listadoUsuariosConLoginMuestraNavbarCorrecto() throws Exception {
         // GIVEN
-        // Un usuario logueado y lista de usuarios
-        Long usuarioId = 1L;
-        UsuarioData usuarioLogeado = new UsuarioData();
-        usuarioLogeado.setId(usuarioId);
-        usuarioLogeado.setNombre("Usuario Logeado");
-        usuarioLogeado.setEmail("logeado@example.com");
+        // Un usuario administrador logueado
+        Long adminId = 1L;
+        UsuarioData admin = new UsuarioData();
+        admin.setId(adminId);
+        admin.setEmail("admin@example.com");
+        admin.setNombre("Admin");
+        admin.setEsAdmin(true);
 
-        UsuarioData otroUsuario = new UsuarioData();
-        otroUsuario.setId(2L);
-        otroUsuario.setEmail("otro@example.com");
-
-        when(managerUserSession.usuarioLogeado()).thenReturn(usuarioId);
-        when(usuarioService.findById(usuarioId)).thenReturn(usuarioLogeado);
-        when(usuarioService.findAll()).thenReturn(Arrays.asList(usuarioLogeado, otroUsuario));
+        when(managerUserSession.usuarioLogeado()).thenReturn(adminId);
+        when(usuarioService.findById(adminId)).thenReturn(admin);
+        when(usuarioService.findAll()).thenReturn(Arrays.asList(admin));
 
         // WHEN, THEN
-        // Al acceder al listado de usuarios, se muestra el navbar con el usuario logueado
+        // Se muestra la página con el navbar correcto
         this.mockMvc.perform(get("/registrados"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(allOf(
-                        containsString("Usuario Logeado"),
-                        containsString("Tareas"),
-                        containsString("Cuenta")
-                )));
+                .andExpect(content().string(containsString("Admin")))
+                .andExpect(content().string(containsString("Cerrar sesión")));
     }
 } 

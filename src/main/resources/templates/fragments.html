@@ -26,6 +26,9 @@
                 <li class="nav-item" th:if="${usuario != null}">
                     <a class="nav-link" th:href="@{/usuarios/{id}/tareas(id=${usuario.id})}">Tareas</a>
                 </li>
+                <li class="nav-item" th:if="${usuario != null && usuario.esAdmin}">
+                    <a class="nav-link" th:href="@{/registrados}">Usuarios</a>
+                </li>
             </ul>
 
             <!-- Enlaces Derecha - SI LOGEADO -->

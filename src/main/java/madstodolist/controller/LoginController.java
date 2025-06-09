@@ -1,10 +1,8 @@
 package madstodolist.controller;
 
-import madstodolist.authentication.ManagerUserSession;
-import madstodolist.dto.LoginData;
-import madstodolist.dto.RegistroData;
-import madstodolist.dto.UsuarioData;
-import madstodolist.service.UsuarioService;
+import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,8 +11,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
+import madstodolist.authentication.ManagerUserSession;
+import madstodolist.dto.LoginData;
+import madstodolist.dto.RegistroData;
+import madstodolist.dto.UsuarioData;
+import madstodolist.service.UsuarioService;
+import madstodolist.service.UsuarioServiceException;
 
 @Controller
 public class LoginController {
@@ -47,12 +49,20 @@ public class LoginController {
 
             managerUserSession.logearUsuario(usuario.getId());
 
+            // Si el usuario es administrador, redirigir al listado de usuarios
+            if (usuario.isEsAdmin()) {
+                return "redirect:/registrados";
+            }
+
             return "redirect:/usuarios/" + usuario.getId() + "/tareas";
         } else if (loginStatus == UsuarioService.LoginStatus.USER_NOT_FOUND) {
             model.addAttribute("error", "No existe usuario");
             return "formLogin";
         } else if (loginStatus == UsuarioService.LoginStatus.ERROR_PASSWORD) {
             model.addAttribute("error", "Contraseña incorrecta");
+            return "formLogin";
+        } else if (loginStatus == UsuarioService.LoginStatus.USER_BLOCKED) {
+            model.addAttribute("error", "Tu cuenta ha sido bloqueada. Contacta con el administrador.");
             return "formLogin";
         }
         return "formLogin";
@@ -61,6 +71,7 @@ public class LoginController {
     @GetMapping("/registro")
     public String registroForm(Model model) {
         model.addAttribute("registroData", new RegistroData());
+        model.addAttribute("existeAdmin", usuarioService.existeAdmin());
         return "formRegistro";
     }
 
@@ -68,23 +79,41 @@ public class LoginController {
    public String registroSubmit(@Valid RegistroData registroData, BindingResult result, Model model) {
 
         if (result.hasErrors()) {
+            model.addAttribute("existeAdmin", usuarioService.existeAdmin());
             return "formRegistro";
         }
 
         if (usuarioService.findByEmail(registroData.getEmail()) != null) {
             model.addAttribute("registroData", registroData);
+            model.addAttribute("existeAdmin", usuarioService.existeAdmin());
             model.addAttribute("error", "El usuario " + registroData.getEmail() + " ya existe");
             return "formRegistro";
         }
 
-        UsuarioData usuario = new UsuarioData();
-        usuario.setEmail(registroData.getEmail());
-        usuario.setPassword(registroData.getPassword());
-        usuario.setFechaNacimiento(registroData.getFechaNacimiento());
-        usuario.setNombre(registroData.getNombre());
+        // Verificar si ya existe un administrador y se intenta registrar otro
+        if (registroData.isEsAdmin() && usuarioService.existeAdmin()) {
+            model.addAttribute("registroData", registroData);
+            model.addAttribute("existeAdmin", usuarioService.existeAdmin());
+            model.addAttribute("error", "Ya existe un administrador en el sistema");
+            return "formRegistro";
+        }
 
-        usuarioService.registrar(usuario);
-        return "redirect:/login";
+        try {
+            UsuarioData usuario = new UsuarioData();
+            usuario.setEmail(registroData.getEmail());
+            usuario.setPassword(registroData.getPassword());
+            usuario.setFechaNacimiento(registroData.getFechaNacimiento());
+            usuario.setNombre(registroData.getNombre());
+            usuario.setEsAdmin(registroData.isEsAdmin());
+
+            usuarioService.registrar(usuario);
+            return "redirect:/login";
+        } catch (UsuarioServiceException e) {
+            model.addAttribute("registroData", registroData);
+            model.addAttribute("existeAdmin", usuarioService.existeAdmin());
+            model.addAttribute("error", e.getMessage());
+            return "formRegistro";
+        }
    }
 
    @GetMapping("/logout")

@@ -1,8 +1,10 @@
 package madstodolist.service;
 
-import madstodolist.dto.UsuarioData;
-import madstodolist.model.Usuario;
-import madstodolist.repository.UsuarioRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,22 +12,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-import java.util.List;
+import madstodolist.dto.UsuarioData;
+import madstodolist.model.Usuario;
+import madstodolist.repository.UsuarioRepository;
 
 @Service
 public class UsuarioService {
 
     Logger logger = LoggerFactory.getLogger(UsuarioService.class);
 
-    public enum LoginStatus {LOGIN_OK, USER_NOT_FOUND, ERROR_PASSWORD}
+    public enum LoginStatus {LOGIN_OK, USER_NOT_FOUND, ERROR_PASSWORD, USER_BLOCKED}
 
     @Autowired
     private UsuarioRepository usuarioRepository;
     @Autowired
     private ModelMapper modelMapper;
+
+    @Transactional(readOnly = true)
+    public boolean existeAdmin() {
+        return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
+                .anyMatch(Usuario::isEsAdmin);
+    }
 
     @Transactional(readOnly = true)
     public LoginStatus login(String eMail, String password) {
@@ -34,6 +41,8 @@ public class UsuarioService {
             return LoginStatus.USER_NOT_FOUND;
         } else if (!usuario.get().getPassword().equals(password)) {
             return LoginStatus.ERROR_PASSWORD;
+        } else if (usuario.get().isBloqueado()) {
+            return LoginStatus.USER_BLOCKED;
         } else {
             return LoginStatus.LOGIN_OK;
         }
@@ -51,6 +60,8 @@ public class UsuarioService {
             throw new UsuarioServiceException("El usuario no tiene email");
         else if (usuario.getPassword() == null)
             throw new UsuarioServiceException("El usuario no tiene password");
+        else if (usuario.isEsAdmin() && existeAdmin())
+            throw new UsuarioServiceException("Ya existe un administrador en el sistema");
         else {
             Usuario usuarioNuevo = modelMapper.map(usuario, Usuario.class);
             usuarioNuevo = usuarioRepository.save(usuarioNuevo);
@@ -78,13 +89,23 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<UsuarioData> findAll() {
-    return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
-            .map(usuario -> {
-                UsuarioData data = new UsuarioData();
-                data.setId(usuario.getId());
-                data.setEmail(usuario.getEmail());
-                return data;
-            })
-            .collect(Collectors.toList());
+        return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
+                .map(usuario -> {
+                    UsuarioData data = new UsuarioData();
+                    data.setId(usuario.getId());
+                    data.setEmail(usuario.getEmail());
+                    data.setEsAdmin(usuario.isEsAdmin());
+                    data.setBloqueado(usuario.isBloqueado());
+                    return data;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void cambiarEstadoBloqueo(Long idUsuario) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new UsuarioServiceException("Usuario no encontrado"));
+        usuario.setBloqueado(!usuario.isBloqueado());
+        usuarioRepository.save(usuario);
     }
 }

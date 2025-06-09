@@ -10,17 +10,28 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Email</th>
+                <th>Nombre</th>
+                <th>Fecha de nacimiento</th>
+                <th>Administrador</th>
+                <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             <tr th:each="usuario : ${usuarios}">
-                <td th:text="${usuario.id}">1</td>
-                <td th:text="${usuario.email}">email@example.com</td>
+                <td th:text="${usuario.email}"></td>
+                <td th:text="${usuario.nombre}"></td>
+                <td th:text="${#dates.format(usuario.fechaNacimiento, 'dd/MM/yyyy')}"></td>
+                <td th:text="${usuario.esAdmin ? 'Sí' : 'No'}"></td>
+                <td th:text="${usuario.bloqueado ? 'Bloqueado' : 'Activo'}"></td>
                 <td>
-                    <a th:href="@{/registrados/{id}(id=${usuario.id})}" class="btn btn-info btn-sm">Ver detalles</a>
+                    <a th:href="@{/registrados/{id}(id=${usuario.id})}" class="btn btn-info btn-sm">Detalles</a>
+                    <form th:action="@{/registrados/{id}/bloquear(id=${usuario.id})}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-warning btn-sm" th:text="${usuario.bloqueado ? 'Desbloquear' : 'Bloquear'}">
+                            Bloquear/Desbloquear
+                        </button>
+                    </form>
                 </td>
             </tr>
         </tbody>
