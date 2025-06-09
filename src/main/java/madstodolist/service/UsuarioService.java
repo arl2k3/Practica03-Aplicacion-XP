@@ -1,8 +1,10 @@
 package madstodolist.service;
 
-import madstodolist.dto.UsuarioData;
-import madstodolist.model.Usuario;
-import madstodolist.repository.UsuarioRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,10 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-import java.util.List;
+import madstodolist.dto.UsuarioData;
+import madstodolist.model.Usuario;
+import madstodolist.repository.UsuarioRepository;
 
 @Service
 public class UsuarioService {
@@ -26,6 +27,12 @@ public class UsuarioService {
     private UsuarioRepository usuarioRepository;
     @Autowired
     private ModelMapper modelMapper;
+
+    @Transactional(readOnly = true)
+    public boolean existeAdmin() {
+        return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
+                .anyMatch(Usuario::isEsAdmin);
+    }
 
     @Transactional(readOnly = true)
     public LoginStatus login(String eMail, String password) {
@@ -51,6 +58,8 @@ public class UsuarioService {
             throw new UsuarioServiceException("El usuario no tiene email");
         else if (usuario.getPassword() == null)
             throw new UsuarioServiceException("El usuario no tiene password");
+        else if (usuario.isEsAdmin() && existeAdmin())
+            throw new UsuarioServiceException("Ya existe un administrador en el sistema");
         else {
             Usuario usuarioNuevo = modelMapper.map(usuario, Usuario.class);
             usuarioNuevo = usuarioRepository.save(usuarioNuevo);
@@ -83,6 +92,7 @@ public class UsuarioService {
                 UsuarioData data = new UsuarioData();
                 data.setId(usuario.getId());
                 data.setEmail(usuario.getEmail());
+                data.setEsAdmin(usuario.isEsAdmin());
                 return data;
             })
             .collect(Collectors.toList());
