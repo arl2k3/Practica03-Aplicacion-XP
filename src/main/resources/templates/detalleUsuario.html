@@ -39,6 +39,14 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4">
+                            <strong>Rol:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            <span th:text="${usuarioDetalle.esAdmin ? 'Administrador' : 'Usuario'}"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
                             <strong>Fecha de Nacimiento:</strong>
                         </div>
                         <div class="col-md-8">
