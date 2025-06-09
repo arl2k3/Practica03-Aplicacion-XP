@@ -21,7 +21,7 @@ public class UsuarioService {
 
     Logger logger = LoggerFactory.getLogger(UsuarioService.class);
 
-    public enum LoginStatus {LOGIN_OK, USER_NOT_FOUND, ERROR_PASSWORD}
+    public enum LoginStatus {LOGIN_OK, USER_NOT_FOUND, ERROR_PASSWORD, USER_BLOCKED}
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -41,6 +41,8 @@ public class UsuarioService {
             return LoginStatus.USER_NOT_FOUND;
         } else if (!usuario.get().getPassword().equals(password)) {
             return LoginStatus.ERROR_PASSWORD;
+        } else if (usuario.get().isBloqueado()) {
+            return LoginStatus.USER_BLOCKED;
         } else {
             return LoginStatus.LOGIN_OK;
         }
@@ -87,14 +89,23 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<UsuarioData> findAll() {
-    return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
-            .map(usuario -> {
-                UsuarioData data = new UsuarioData();
-                data.setId(usuario.getId());
-                data.setEmail(usuario.getEmail());
-                data.setEsAdmin(usuario.isEsAdmin());
-                return data;
-            })
-            .collect(Collectors.toList());
+        return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
+                .map(usuario -> {
+                    UsuarioData data = new UsuarioData();
+                    data.setId(usuario.getId());
+                    data.setEmail(usuario.getEmail());
+                    data.setEsAdmin(usuario.isEsAdmin());
+                    data.setBloqueado(usuario.isBloqueado());
+                    return data;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void cambiarEstadoBloqueo(Long idUsuario) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new UsuarioServiceException("Usuario no encontrado"));
+        usuario.setBloqueado(!usuario.isBloqueado());
+        usuarioRepository.save(usuario);
     }
 }

@@ -37,6 +37,9 @@ public class Usuario implements Serializable {
     @Column(name = "es_admin")
     private boolean esAdmin;
 
+    @Column(name = "bloqueado")
+    private boolean bloqueado;
+
     // La relación es lazy por defecto,
     // es necesario acceder a la lista de tareas para que se carguen
     @OneToMany(mappedBy = "usuario")
@@ -99,6 +102,14 @@ public class Usuario implements Serializable {
 
     public void setEsAdmin(boolean esAdmin) {
         this.esAdmin = esAdmin;
+    }
+
+    public boolean isBloqueado() {
+        return bloqueado;
+    }
+
+    public void setBloqueado(boolean bloqueado) {
+        this.bloqueado = bloqueado;
     }
 
     // Getters y setters de la relación
