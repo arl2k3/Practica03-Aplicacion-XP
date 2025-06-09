@@ -90,6 +90,14 @@ public class LoginController {
             return "formRegistro";
         }
 
+        // Verificar si ya existe un administrador y se intenta registrar otro
+        if (registroData.isEsAdmin() && usuarioService.existeAdmin()) {
+            model.addAttribute("registroData", registroData);
+            model.addAttribute("existeAdmin", usuarioService.existeAdmin());
+            model.addAttribute("error", "Ya existe un administrador en el sistema");
+            return "formRegistro";
+        }
+
         try {
             UsuarioData usuario = new UsuarioData();
             usuario.setEmail(registroData.getEmail());

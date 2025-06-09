@@ -9,6 +9,8 @@ import org.springframework.test.context.jdbc.Sql;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 @SpringBootTest
 @Sql(scripts = "/clean-db.sql")
 public class UsuarioServiceTest {
@@ -152,5 +154,65 @@ public class UsuarioServiceTest {
         assertThat(usuario.getId()).isEqualTo(usuarioId);
         assertThat(usuario.getEmail()).isEqualTo("user@ua");
         assertThat(usuario.getNombre()).isEqualTo("Usuario Ejemplo");
+    }
+
+    @Test
+    public void testCambiarEstadoBloqueo() {
+        // GIVEN
+        // Un usuario en la BD
+        Long idUsuario = addUsuarioBD();
+
+        // WHEN
+        // Cambiamos su estado de bloqueo
+        usuarioService.cambiarEstadoBloqueo(idUsuario);
+
+        // THEN
+        // El usuario está bloqueado
+        UsuarioData usuario = usuarioService.findById(idUsuario);
+        assertThat(usuario.isBloqueado()).isTrue();
+
+        // WHEN
+        // Cambiamos de nuevo su estado
+        usuarioService.cambiarEstadoBloqueo(idUsuario);
+
+        // THEN
+        // El usuario está desbloqueado
+        usuario = usuarioService.findById(idUsuario);
+        assertThat(usuario.isBloqueado()).isFalse();
+    }
+
+    @Test
+    public void testLoginUsuarioBloqueado() {
+        // GIVEN
+        // Un usuario en la BD
+        Long idUsuario = addUsuarioBD();
+        // Lo bloqueamos
+        usuarioService.cambiarEstadoBloqueo(idUsuario);
+
+        // WHEN
+        // Intentamos hacer login
+        UsuarioService.LoginStatus loginStatus = usuarioService.login("user@ua", "123");
+
+        // THEN
+        // El login devuelve USER_BLOCKED
+        assertThat(loginStatus).isEqualTo(UsuarioService.LoginStatus.USER_BLOCKED);
+    }
+
+    @Test
+    public void testFindAllIncluyeEstadoBloqueo() {
+        // GIVEN
+        // Un usuario en la BD
+        Long idUsuario = addUsuarioBD();
+        // Lo bloqueamos
+        usuarioService.cambiarEstadoBloqueo(idUsuario);
+
+        // WHEN
+        // Obtenemos todos los usuarios
+        List<UsuarioData> usuarios = usuarioService.findAll();
+
+        // THEN
+        // El usuario está en la lista y tiene el estado de bloqueo correcto
+        assertThat(usuarios).hasSize(1);
+        assertThat(usuarios.get(0).isBloqueado()).isTrue();
     }
 }
